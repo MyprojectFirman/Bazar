@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Pengeluaran</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333333;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #555555;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #cccccc;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"], .delete-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        input[type="submit"]:hover, .delete-btn:hover {
+            background-color: #e53935;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #dddddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Input Pengeluaran</h2>
+        <form id="expenseForm">
+            <label for="description">Deskripsi Pengeluaran:</label>
+            <input type="text" id="description" name="description" required>
+
+            <label for="amount">Jumlah Pengeluaran:</label>
+            <input type="number" id="amount" name="amount" required>
+
+            <label for="receipt">Upload Bukti Struk (Opsional):</label>
+            <input type="file" id="receipt" name="receipt" accept="image/*">
+
+            <input type="submit" value="Tambahkan Pengeluaran">
+        </form>
+        <button class="delete-btn" id="deleteLastExpense">Hapus Pengeluaran Terakhir</button>
+
+        <h3>Daftar Pengeluaran</h3>
+        <table id="expenseTable">
+            <thead>
+                <tr>
+                    <th>Deskripsi</th>
+                    <th>Jumlah</th>
+                    <th>Bukti Struk</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data pengeluaran akan ditampilkan di sini -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExpenses();
+
+            document.getElementById('expenseForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const description = document.getElementById('description').value;
+                const amount = parseFloat(document.getElementById('amount').value);
+                const receiptFile = document.getElementById('receipt').files[0];
+                let receiptURL = '';
+
+                if (receiptFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        receiptURL = event.target.result;
+                        addExpense(description, amount, receiptURL);
+                    };
+                    reader.readAsDataURL(receiptFile);
+                } else {
+                    addExpense(description, amount, receiptURL);
+                }
+            });
+
+            document.getElementById('deleteLastExpense').addEventListener('click', function() {
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Pengeluaran terakhir akan dihapus!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        deleteLastExpense();
+                        Swal.fire(
+                            'Dihapus!',
+                            'Pengeluaran terakhir telah dihapus.',
+                            'success'
+                        );
+                        loadExpenses();
+                    }
+                });
+            });
+        });
+
+        function loadExpenses() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+const expenseTableBody = document.getElementById('expenseTable').getElementsByTagName('tbody')[0];
+            expenseTableBody.innerHTML = '';
+
+            transactions.forEach(transaction => {
+                if (transaction.type === 'expense') {
+                    const row = document.createElement('tr');
+                    const receiptCell = transaction.receiptURL ? `<img src="${transaction.receiptURL}" alt="Bukti Struk" width="100px">` : 'Tidak Ada Bukti';
+                    row.innerHTML = `<td>${transaction.description}</td><td>Rp${transaction.amount.toLocaleString('id-ID')}</td><td>${receiptCell}</td>`;
+                    expenseTableBody.appendChild(row);
+                }
+            });
+        }
+
+        function addExpense(description, amount, receiptURL) {
+            const transaction = {
+                description: description,
+                amount: amount,
+                type: 'expense',
+                receiptURL: receiptURL
+            };
+
+            saveTransactionToLocalStorage(transaction);
+
+            document.getElementById('expenseForm').reset();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Pengeluaran berhasil ditambahkan!'
+            });
+
+            loadExpenses();
+        }
+
+        function saveTransactionToLocalStorage(transaction) {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        function deleteLastExpense() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            if (transactions.length > 0) {
+                transactions.pop();
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+        }
+    </script>
+
+</body>
+</html>

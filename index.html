@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penghitung Pemasukan dan Pengeluaran</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #dddddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            color: #333333;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .income-row {
+            background-color: #e0f7e9; /* Hijau muda */
+        }
+
+        .expense-row {
+            background-color: #ffebee; /* Merah muda */
+        }
+
+        .summary {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .summary table {
+            margin: 0 auto;
+            width: auto;
+            border: none;
+        }
+
+        .summary th, .summary td {
+            border: none;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        .income-summary {
+            color: #4CAF50; /* Warna hijau */
+        }
+
+        .expense-summary {
+            color: #f44336; /* Warna merah */
+        }
+
+        .final-balance {
+            color: #2196F3; /* Warna biru */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Penghitung Pemasukan dan Pengeluaran</h2>
+
+        <h3>Data Pemasukan dan Pengeluaran</h3>
+        <table id="financeTable">
+            <thead>
+                <tr>
+                    <th>Deskripsi</th>
+                    <th>Jumlah</th>
+                    <th>Tipe</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <h3>Ringkasan</h3>
+            <table>
+                <tr>
+                    <th>Pemasukan:</th>
+                    <td class="income-summary"><span id="totalIncome">Rp0</span></td>
+                </tr>
+                <tr>
+                    <th>Pengeluaran:</th>
+                    <td class="expense-summary"><span id="totalExpense">Rp0</span></td>
+                </tr>
+                <tr>
+                    <th>Saldo Akhir:</th>
+                    <td class="final-balance"><span id="finalBalance">Rp0</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTransactions();
+            updateSummary();
+        });
+
+        function loadTransactions() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            const tableBody = document.getElementById('financeTable').getElementsByTagName('tbody')[0];
+
+            transactions.forEach(transaction => {
+                const newRow = tableBody.insertRow();
+
+                const cell1 = newRow.insertCell(0);
+                const cell2 = newRow.insertCell(1);
+                const cell3 = newRow.insertCell(2);
+
+                cell1.textContent = transaction.description;
+                cell2.textContent = formatCurrency(transaction.amount);
+                cell3.textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+
+                // Apply row color based on type
+                if (transaction.type === 'income') {
+                    newRow.classList.add('income-row');
+                } else if (transaction.type === 'expense') {
+                    newRow.classList.add('expense-row');
+                }
+            });
+        }
+
+        function updateSummary() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            transactions.forEach(transaction => {
+                if (transaction.type === 'income') {
+                    totalIncome += transaction.amount;
+                } else if (transaction.type === 'expense') {
+                    totalExpense += transaction.amount;
+                }
+            });
+
+            document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+            document.getElementById('totalExpense').textContent = formatCurrency(totalExpense);
+            document.getElementById('finalBalance').textContent = formatCurrency(totalIncome - totalExpense);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(amount);
+        }
+    </script>
+
+</body>
+</html>
